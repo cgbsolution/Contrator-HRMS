@@ -12,7 +12,7 @@ import { authApi } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@plant.com");
+  const [email, setEmail] = useState("info@cgbindia.com");
   const [password, setPassword] = useState("admin123");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -120,7 +120,7 @@ export default function LoginPage() {
 
             <div className="mt-6 pt-4 border-t border-slate-700">
               <p className="text-center text-xs text-slate-500">
-                Demo: admin@plant.com / admin123
+                Demo: info@cgbindia.com / admin123
               </p>
             </div>
           </CardContent>
