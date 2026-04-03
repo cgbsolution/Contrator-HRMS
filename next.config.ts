@@ -9,7 +9,7 @@ const withPWA = require("next-pwa")({
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ["localhost"],
+    domains: ["localhost", "secure-truth-production-f59a.up.railway.app"],
   },
 };
 
