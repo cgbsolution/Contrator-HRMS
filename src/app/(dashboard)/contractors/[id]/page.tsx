@@ -354,8 +354,8 @@ export default function WorkerDetailPage() {
                   <div>
                     <p className="text-sm font-medium capitalize">{(doc.document_type as string)?.replace(/_/g, " ")}</p>
                     <p className="text-xs text-muted-foreground">{doc.file_name as string}</p>
-                    {doc.document_number && (
-                      <p className="text-xs text-muted-foreground">No: {doc.document_number as string}</p>
+                    {Boolean(doc.document_number) && (
+                      <p className="text-xs text-muted-foreground">No: {String(doc.document_number)}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
