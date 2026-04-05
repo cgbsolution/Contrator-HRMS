@@ -83,12 +83,12 @@ export default function AttendancePage() {
       } else {
         // No attendance records - load active workers
         const wRes = await workersApi.list({ status: "active", page_size: 100 });
-        const wList = wRes.data?.workers ?? wRes.data?.items ?? wRes.data ?? [];
+        const wList = wRes.data?.data ?? wRes.data?.workers ?? wRes.data?.items ?? (Array.isArray(wRes.data) ? wRes.data : []);
         const mapped: AttendanceRecord[] = wList.map(
           (w: Record<string, unknown>) => ({
             worker_id: w.id as string,
             employee_code: (w.employee_code as string) || "",
-            worker_name: (w.name as string) || (w.worker_name as string) || "",
+            worker_name: (w.name as string) || (w.worker_name as string) || `${(w.first_name as string) || ""} ${(w.last_name as string) || ""}`.trim() || "",
             department: (w.department as string) || "",
             shift: (w.shift as string) || "General",
             status: "",
