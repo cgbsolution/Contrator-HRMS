@@ -191,6 +191,7 @@ export default function OnboardWorkerPage() {
         alternate_mobile: form.alternate_mobile || undefined,
         email: form.email || undefined,
         agency_id: form.agency_id,
+        plant_id: "plant_001",
         department: form.department,
         designation: form.designation,
         work_category: form.work_category,
@@ -255,8 +256,13 @@ export default function OnboardWorkerPage() {
 
       router.push("/contractors");
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { detail?: string } } };
-      const message = axiosErr?.response?.data?.detail || "Failed to onboard worker. Please try again.";
+      const axiosErr = err as { response?: { data?: { detail?: unknown } } };
+      const detail = axiosErr?.response?.data?.detail;
+      const message = typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+        ? detail.map((e: { msg?: string }) => e.msg || "Validation error").join(", ")
+        : "Failed to onboard worker. Please try again.";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
