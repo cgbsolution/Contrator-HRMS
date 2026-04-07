@@ -35,6 +35,13 @@ export const authApi = {
     api.post("/auth/login", { email, password }),
   logout: () => api.post("/auth/logout"),
   me: () => api.get("/auth/me"),
+  updateProfile: (data: { name?: string; email?: string }) =>
+    api.put("/auth/profile", data),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.put("/auth/change-password", {
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
   listUsers: () => api.get("/auth/users"),
   createUser: (data: Record<string, unknown>) => api.post("/auth/users", data),
   updateUser: (id: string, params: Record<string, unknown>) =>
@@ -50,11 +57,15 @@ export const workersApi = {
   delete: (id: string) => api.delete(`/workers/${id}`),
   offboard: (id: string) => api.post(`/workers/${id}/offboard`),
   activate: (id: string) => api.post(`/workers/${id}/activate`),
-  terminate: (id: string) => api.post(`/workers/${id}/terminate`),
+  terminate: (id: string, dateOfLeaving?: string) =>
+    api.post(`/workers/${id}/terminate`, null, {
+      params: dateOfLeaving ? { date_of_leaving: dateOfLeaving } : {},
+    }),
   createLogin: (id: string) => api.post(`/workers/${id}/create-login`),
-  uploadDocument: (id: string, data: FormData) =>
+  uploadDocument: (id: string, data: FormData, params?: Record<string, string>) =>
     api.post(`/workers/${id}/documents`, data, {
       headers: { "Content-Type": "multipart/form-data" },
+      params,
     }),
   documents: (id: string) => api.get(`/workers/${id}/documents`),
   allDocuments: (params?: Record<string, unknown>) => api.get("/workers/documents/all", { params }),
@@ -187,6 +198,12 @@ export const essApi = {
     api.post(`/ess/investments/${declarationId}/proof`, data, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+  // Punch attendance
+  punch: (data: { latitude?: number; longitude?: number; address?: string }) =>
+    api.post("/ess/punch", data),
+  punchToday: () => api.get("/ess/punch/today"),
+  punchHistory: (days?: number) =>
+    api.get("/ess/punch/history", { params: { days } }),
 };
 
 // ─── Leave Admin ──────────────────────────────────────────────────────────────

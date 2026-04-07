@@ -8,8 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   User, Briefcase, CreditCard, Shield, FileText, Phone, MapPin,
-  Loader2, ArrowLeft, Save, Edit, X, Power, LogOut, UserPlus, Trash2,
+  Loader2, ArrowLeft, Save, Edit, X, Power, LogOut, UserPlus, Trash2, CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
 import { workersApi } from "@/lib/api";
@@ -33,6 +41,8 @@ export default function WorkerDetailPage() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editData, setEditData] = useState<Record<string, unknown>>({});
+  const [terminateDialog, setTerminateDialog] = useState(false);
+  const [leavingDate, setLeavingDate] = useState(new Date().toISOString().split("T")[0]);
 
   const loadWorker = useCallback(() => {
     setLoading(true);
@@ -86,10 +96,14 @@ export default function WorkerDetailPage() {
   }
 
   async function handleAction(action: string) {
+    if (action === "terminate") {
+      setLeavingDate(new Date().toISOString().split("T")[0]);
+      setTerminateDialog(true);
+      return;
+    }
     try {
       if (action === "activate") await workersApi.activate(workerId);
       else if (action === "offboard") await workersApi.offboard(workerId);
-      else if (action === "terminate") await workersApi.terminate(workerId);
       else if (action === "create-login") {
         const res = await workersApi.createLogin(workerId);
         toast.success(`Login created: ${res.data.email}`);
@@ -99,6 +113,18 @@ export default function WorkerDetailPage() {
       loadWorker();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || `Failed to ${action}`;
+      toast.error(msg);
+    }
+  }
+
+  async function confirmTerminate() {
+    setTerminateDialog(false);
+    try {
+      await workersApi.terminate(workerId, leavingDate);
+      toast.success("Worker terminated successfully");
+      loadWorker();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Failed to terminate";
       toast.error(msg);
     }
   }
@@ -376,6 +402,38 @@ export default function WorkerDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Terminate - Date of Leaving Dialog */}
+      <Dialog open={terminateDialog} onOpenChange={setTerminateDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-red-600" />
+              Date of Leaving
+            </DialogTitle>
+            <DialogDescription>
+              Enter the worker&apos;s last working date before termination.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            <Label>Date of Leaving <span className="text-red-500">*</span></Label>
+            <Input
+              type="date"
+              value={leavingDate}
+              onChange={(e) => setLeavingDate(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTerminateDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmTerminate} disabled={!leavingDate} className="bg-red-600 hover:bg-red-500">
+              <Trash2 className="h-4 w-4 mr-1" />
+              Confirm Terminate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

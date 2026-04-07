@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Bell, Search, Menu, HardHat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,9 @@ const pageTitles: Record<string, string> = {
   "/settings/plant": "Plant Setup",
   "/settings/users": "Users & Roles",
   "/settings/compliance": "Compliance Config",
+  "/settings/profile": "My Profile",
   "/ess/dashboard": "Employee Dashboard",
+  "/ess/punch": "Punch Attendance",
   "/ess/attendance": "My Attendance",
   "/ess/payslips": "My Payslips",
   "/ess/leaves": "Leave Management",
@@ -101,7 +104,10 @@ export function Header({ onMenuClick }: HeaderProps) {
 
       {/* User avatar */}
       {user && (
-        <div className="flex items-center gap-2.5 ml-2">
+        <Link
+          href={pathname.startsWith("/ess") ? "/ess/profile" : "/settings/profile"}
+          className="flex items-center gap-2.5 ml-2 hover:opacity-80 transition-opacity"
+        >
           <div
             className={cn(
               "h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm cursor-pointer select-none"
@@ -113,7 +119,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             <p className="text-sm font-medium leading-tight text-foreground">{user.name}</p>
             <p className="text-xs text-muted-foreground capitalize">{user.role?.replace("_", " ")}</p>
           </div>
-        </div>
+        </Link>
       )}
     </header>
   );

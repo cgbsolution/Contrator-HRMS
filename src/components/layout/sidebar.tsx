@@ -26,6 +26,7 @@ import {
   FileCheck,
   AlertCircle,
   Briefcase,
+  User,
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -100,6 +101,7 @@ const navItems: NavItem[] = [
       { label: "Plant Setup", href: "/settings/plant", icon: Building2 },
       { label: "Users & Roles", href: "/settings/users", icon: Users },
       { label: "Compliance Config", href: "/settings/compliance", icon: ShieldCheck },
+      { label: "My Profile", href: "/settings/profile", icon: User },
     ],
   },
 ];

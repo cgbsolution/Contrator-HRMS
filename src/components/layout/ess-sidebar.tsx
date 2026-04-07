@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
+  Fingerprint,
   Calendar,
   Receipt,
   ClipboardList,
@@ -17,6 +18,7 @@ import { toast } from "sonner";
 
 const essNavItems = [
   { label: "Dashboard", href: "/ess/dashboard", icon: LayoutDashboard },
+  { label: "Punch", href: "/ess/punch", icon: Fingerprint },
   { label: "My Attendance", href: "/ess/attendance", icon: Calendar },
   { label: "My Payslips", href: "/ess/payslips", icon: Receipt },
   { label: "Leave", href: "/ess/leaves", icon: ClipboardList },

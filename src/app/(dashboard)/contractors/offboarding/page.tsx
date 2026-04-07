@@ -4,8 +4,18 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Loader2, AlertTriangle, RefreshCw, UserMinus, CheckCircle2, XCircle, ClipboardList,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Loader2, AlertTriangle, RefreshCw, UserMinus, CheckCircle2, XCircle, ClipboardList, CalendarDays,
 } from "lucide-react";
 import { workersApi } from "@/lib/api";
 import { toast } from "sonner";
@@ -38,6 +48,8 @@ export default function OffboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionIds, setActionIds] = useState<Set<string>>(new Set());
   const [checklists, setChecklists] = useState<Record<string, ChecklistItem[]>>({});
+  const [leavingDialog, setLeavingDialog] = useState<{ open: boolean; workerId: string }>({ open: false, workerId: "" });
+  const [leavingDate, setLeavingDate] = useState(new Date().toISOString().split("T")[0]);
 
   async function fetchWorkers() {
     setLoading(true);
@@ -76,10 +88,17 @@ export default function OffboardingPage() {
     }));
   }
 
-  async function handleComplete(workerId: string) {
+  function handleComplete(workerId: string) {
+    setLeavingDate(new Date().toISOString().split("T")[0]);
+    setLeavingDialog({ open: true, workerId });
+  }
+
+  async function confirmComplete() {
+    const workerId = leavingDialog.workerId;
+    setLeavingDialog({ open: false, workerId: "" });
     setActionIds((prev) => new Set(prev).add(workerId));
     try {
-      await workersApi.terminate(workerId);
+      await workersApi.terminate(workerId, leavingDate);
       toast.success("Worker offboarding completed");
       fetchWorkers();
     } catch {
@@ -250,6 +269,38 @@ export default function OffboardingPage() {
           );
         })}
       </div>
+
+      {/* Date of Leaving Dialog */}
+      <Dialog open={leavingDialog.open} onOpenChange={(open) => setLeavingDialog({ open, workerId: open ? leavingDialog.workerId : "" })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-orange-600" />
+              Date of Leaving
+            </DialogTitle>
+            <DialogDescription>
+              Enter the worker&apos;s last working date to complete offboarding.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            <Label>Date of Leaving <span className="text-red-500">*</span></Label>
+            <Input
+              type="date"
+              value={leavingDate}
+              onChange={(e) => setLeavingDate(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLeavingDialog({ open: false, workerId: "" })}>
+              Cancel
+            </Button>
+            <Button onClick={confirmComplete} disabled={!leavingDate} className="bg-orange-600 hover:bg-orange-500">
+              <CheckCircle2 className="h-4 w-4 mr-1" />
+              Confirm & Complete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

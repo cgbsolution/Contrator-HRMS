@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -13,6 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   UserPlus,
   Search,
@@ -30,6 +39,7 @@ import {
   LogOut,
   Power,
   XCircle,
+  CalendarDays,
 } from "lucide-react";
 import { formatDate, workerStatusConfig, getInitials } from "@/lib/utils";
 import { workersApi } from "@/lib/api";
@@ -50,6 +60,8 @@ export default function ContractorsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [terminateDialog, setTerminateDialog] = useState<{ open: boolean; workerId: string; workerName: string }>({ open: false, workerId: "", workerName: "" });
+  const [leavingDate, setLeavingDate] = useState(new Date().toISOString().split("T")[0]);
   const pageSize = 20;
 
   const fetchWorkers = useCallback(async () => {
@@ -87,6 +99,11 @@ export default function ContractorsPage() {
   }, [search, statusFilter, deptFilter]);
 
   async function handleAction(action: "activate" | "offboard" | "terminate", workerId: string, workerName: string) {
+    if (action === "terminate") {
+      setLeavingDate(new Date().toISOString().split("T")[0]);
+      setTerminateDialog({ open: true, workerId, workerName });
+      return;
+    }
     setActionLoading(workerId);
     try {
       if (action === "activate") {
@@ -95,13 +112,25 @@ export default function ContractorsPage() {
       } else if (action === "offboard") {
         await workersApi.offboard(workerId);
         toast.success(`${workerName} offboarding initiated`);
-      } else if (action === "terminate") {
-        await workersApi.terminate(workerId);
-        toast.success(`${workerName} terminated`);
       }
       fetchWorkers();
     } catch {
       toast.error(`Failed to ${action} ${workerName}`);
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function confirmTerminate() {
+    const { workerId, workerName } = terminateDialog;
+    setTerminateDialog({ open: false, workerId: "", workerName: "" });
+    setActionLoading(workerId);
+    try {
+      await workersApi.terminate(workerId, leavingDate);
+      toast.success(`${workerName} terminated`);
+      fetchWorkers();
+    } catch {
+      toast.error(`Failed to terminate ${workerName}`);
     } finally {
       setActionLoading(null);
     }
@@ -345,6 +374,38 @@ export default function ContractorsPage() {
           )}
         </Card>
       )}
+
+      {/* Terminate - Date of Leaving Dialog */}
+      <Dialog open={terminateDialog.open} onOpenChange={(open) => setTerminateDialog({ open, workerId: open ? terminateDialog.workerId : "", workerName: open ? terminateDialog.workerName : "" })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-red-600" />
+              Date of Leaving
+            </DialogTitle>
+            <DialogDescription>
+              Enter the last working date for <span className="font-semibold">{terminateDialog.workerName}</span> before termination.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            <Label>Date of Leaving <span className="text-red-500">*</span></Label>
+            <Input
+              type="date"
+              value={leavingDate}
+              onChange={(e) => setLeavingDate(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTerminateDialog({ open: false, workerId: "", workerName: "" })}>
+              Cancel
+            </Button>
+            <Button onClick={confirmTerminate} disabled={!leavingDate} className="bg-red-600 hover:bg-red-500">
+              <XCircle className="h-4 w-4 mr-1" />
+              Confirm Terminate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

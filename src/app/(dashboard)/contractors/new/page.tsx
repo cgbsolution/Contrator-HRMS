@@ -62,14 +62,21 @@ const shifts = [
 ];
 const indianStates = ["Andhra Pradesh", "Bihar", "Delhi", "Gujarat", "Haryana", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Odisha", "Punjab", "Rajasthan", "Tamil Nadu", "Telangana", "Uttar Pradesh", "Uttarakhand", "West Bengal"];
 
-const DOCUMENT_TYPES: { key: string; label: string; required: boolean }[] = [
+// Aadhaar & PAN are uploaded separately in Step 4 (Statutory IDs)
+const STATUTORY_DOC_TYPES: { key: string; label: string; required: boolean }[] = [
   { key: "aadhaar", label: "Aadhaar Card", required: true },
   { key: "pan", label: "PAN Card", required: false },
+];
+
+// Remaining documents in Step 5
+const DOCUMENT_TYPES: { key: string; label: string; required: boolean }[] = [
   { key: "bank_passbook", label: "Bank Passbook / Cancelled Cheque", required: false },
   { key: "photo", label: "Passport Photo", required: true },
   { key: "medical_certificate", label: "Medical Fitness Certificate", required: false },
   { key: "police_verification", label: "Police Verification", required: false },
 ];
+
+const ACCEPTED_FILE_TYPES = ".pdf,.zip";
 
 export default function OnboardWorkerPage() {
   const router = useRouter();
@@ -102,6 +109,9 @@ export default function OnboardWorkerPage() {
     emergency_name: "", emergency_phone: "", emergency_relation: "",
   });
 
+  const [statutoryDocs, setStatutoryDocs] = useState<DocUpload[]>(
+    STATUTORY_DOC_TYPES.map((d) => ({ ...d, file: null }))
+  );
   const [documents, setDocuments] = useState<DocUpload[]>(
     DOCUMENT_TYPES.map((d) => ({ ...d, file: null }))
   );
@@ -155,10 +165,29 @@ export default function OnboardWorkerPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  function handleStatutoryFileSelect(docKey: string, file: File | null) {
+    setStatutoryDocs((prev) =>
+      prev.map((d) => (d.key === docKey ? { ...d, file } : d))
+    );
+  }
+
   function handleFileSelect(docKey: string, file: File | null) {
     setDocuments((prev) =>
       prev.map((d) => (d.key === docKey ? { ...d, file } : d))
     );
+  }
+
+  function validateFileType(file: File): boolean {
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (ext !== "pdf" && ext !== "zip") {
+      toast.error("Only PDF and ZIP files are allowed");
+      return false;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return false;
+    }
+    return true;
   }
 
   function validateStep(): boolean {
@@ -261,15 +290,18 @@ export default function OnboardWorkerPage() {
         return;
       }
 
-      // Upload documents
-      const docsToUpload = documents.filter((d) => d.file);
+      // Upload all documents (statutory + general)
+      const allDocsToUpload = [
+        ...statutoryDocs.filter((d) => d.file),
+        ...documents.filter((d) => d.file),
+      ];
       let uploadErrors = 0;
 
-      for (const doc of docsToUpload) {
+      for (const doc of allDocsToUpload) {
         try {
           const formData = new FormData();
           formData.append("file", doc.file!);
-          await workersApi.uploadDocument(workerId + `?document_type=${doc.key}`, formData);
+          await workersApi.uploadDocument(workerId, formData, { document_type: doc.key });
         } catch {
           uploadErrors++;
         }
@@ -277,6 +309,8 @@ export default function OnboardWorkerPage() {
 
       if (uploadErrors > 0) {
         toast.warning(`Worker onboarded but ${uploadErrors} document(s) failed to upload. You can upload them later.`);
+      } else if (form.email) {
+        toast.success("Worker onboarded successfully! Login credentials sent to their email.");
       } else {
         toast.success("Worker onboarded successfully!");
       }
@@ -628,24 +662,77 @@ export default function OnboardWorkerPage() {
 
           {/* Step 4: Statutory IDs */}
           {currentStep === 4 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Aadhaar Number</Label>
-                <Input placeholder="XXXX XXXX XXXX" maxLength={12} value={form.aadhaar} onChange={(e) => handleChange("aadhaar", e.target.value)} />
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Aadhaar */}
+                <div className="space-y-1.5">
+                  <Label>Aadhaar Number</Label>
+                  <Input placeholder="XXXX XXXX XXXX" maxLength={12} value={form.aadhaar} onChange={(e) => handleChange("aadhaar", e.target.value)} />
+                </div>
+                {/* Aadhaar File Upload */}
+                <div className="space-y-1.5">
+                  <Label>Aadhaar Card Upload <span className="text-red-500">*</span></Label>
+                  {(() => {
+                    const doc = statutoryDocs.find((d) => d.key === "aadhaar");
+                    const hasFile = !!doc?.file;
+                    return (
+                      <div className={cn("flex items-center gap-2 p-2.5 rounded-lg border-2 border-dashed", hasFile ? "border-green-400 bg-green-50" : "border-gray-200")}>
+                        {hasFile ? <Check className="h-4 w-4 text-green-600 shrink-0" /> : <Upload className="h-4 w-4 text-muted-foreground shrink-0" />}
+                        <span className="text-sm flex-1 truncate">{hasFile ? doc!.file!.name : "PDF or ZIP only"}</span>
+                        {hasFile && (
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-500" onClick={() => handleStatutoryFileSelect("aadhaar", null)}>
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <Button variant={hasFile ? "outline" : "secondary"} size="sm" className="gap-1 h-8 shrink-0" onClick={() => fileInputRefs.current["stat_aadhaar"]?.click()}>
+                          <Upload className="h-3.5 w-3.5" />{hasFile ? "Replace" : "Upload"}
+                        </Button>
+                        <input ref={(el) => { fileInputRefs.current["stat_aadhaar"] = el; }} type="file" accept={ACCEPTED_FILE_TYPES} className="hidden" onChange={(e) => { const f = e.target.files?.[0] || null; if (f && !validateFileType(f)) { e.target.value = ""; return; } handleStatutoryFileSelect("aadhaar", f); e.target.value = ""; }} />
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* PAN */}
+                <div className="space-y-1.5">
+                  <Label>PAN Number</Label>
+                  <Input placeholder="ABCDE1234F" maxLength={10} className="uppercase" value={form.pan} onChange={(e) => handleChange("pan", e.target.value.toUpperCase())} />
+                </div>
+                {/* PAN File Upload */}
+                <div className="space-y-1.5">
+                  <Label>PAN Card Upload</Label>
+                  {(() => {
+                    const doc = statutoryDocs.find((d) => d.key === "pan");
+                    const hasFile = !!doc?.file;
+                    return (
+                      <div className={cn("flex items-center gap-2 p-2.5 rounded-lg border-2 border-dashed", hasFile ? "border-green-400 bg-green-50" : "border-gray-200")}>
+                        {hasFile ? <Check className="h-4 w-4 text-green-600 shrink-0" /> : <Upload className="h-4 w-4 text-muted-foreground shrink-0" />}
+                        <span className="text-sm flex-1 truncate">{hasFile ? doc!.file!.name : "PDF or ZIP only"}</span>
+                        {hasFile && (
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-500" onClick={() => handleStatutoryFileSelect("pan", null)}>
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <Button variant={hasFile ? "outline" : "secondary"} size="sm" className="gap-1 h-8 shrink-0" onClick={() => fileInputRefs.current["stat_pan"]?.click()}>
+                          <Upload className="h-3.5 w-3.5" />{hasFile ? "Replace" : "Upload"}
+                        </Button>
+                        <input ref={(el) => { fileInputRefs.current["stat_pan"] = el; }} type="file" accept={ACCEPTED_FILE_TYPES} className="hidden" onChange={(e) => { const f = e.target.files?.[0] || null; if (f && !validateFileType(f)) { e.target.value = ""; return; } handleStatutoryFileSelect("pan", f); e.target.value = ""; }} />
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>UAN (PF Universal Account)</Label>
+                  <Input placeholder="12-digit UAN" maxLength={12} value={form.uan} onChange={(e) => handleChange("uan", e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>ESI Number</Label>
+                  <Input placeholder="ESI IP number" value={form.esi_number} onChange={(e) => handleChange("esi_number", e.target.value)} />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>PAN Number</Label>
-                <Input placeholder="ABCDE1234F" maxLength={10} className="uppercase" value={form.pan} onChange={(e) => handleChange("pan", e.target.value.toUpperCase())} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>UAN (PF Universal Account)</Label>
-                <Input placeholder="12-digit UAN" maxLength={12} value={form.uan} onChange={(e) => handleChange("uan", e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>ESI Number</Label>
-                <Input placeholder="ESI IP number" value={form.esi_number} onChange={(e) => handleChange("esi_number", e.target.value)} />
-              </div>
-              <div className="sm:col-span-2 border-t pt-4">
+
+              <div className="border-t pt-4">
                 <p className="font-semibold text-sm mb-3 text-muted-foreground">Bank Account Details</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -674,7 +761,7 @@ export default function OnboardWorkerPage() {
             <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-2">
                 <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
-                <p className="text-sm text-blue-700">Upload clear scanned copies or photos. Supported formats: PDF, JPG, PNG (max 5MB each).</p>
+                <p className="text-sm text-blue-700">Upload documents in PDF or ZIP format only (max 5MB each).</p>
               </div>
               {documents.map((doc) => {
                 const hasFile = !!doc.file;
@@ -725,12 +812,12 @@ export default function OnboardWorkerPage() {
                       <input
                         ref={(el) => { fileInputRefs.current[doc.key] = el; }}
                         type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
+                        accept={ACCEPTED_FILE_TYPES}
                         className="hidden"
                         onChange={(e) => {
                           const file = e.target.files?.[0] || null;
-                          if (file && file.size > 5 * 1024 * 1024) {
-                            toast.error("File size must be less than 5MB");
+                          if (file && !validateFileType(file)) {
+                            e.target.value = "";
                             return;
                           }
                           handleFileSelect(doc.key, file);
