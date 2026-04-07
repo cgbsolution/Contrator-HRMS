@@ -53,8 +53,6 @@ interface DocUpload {
   file: File | null;
 }
 
-const departments = ["Production", "Maintenance", "Quality", "Warehouse", "Security", "Housekeeping", "Canteen"];
-const designations = ["Machine Operator", "Fitter", "Welder", "Helper", "QC Inspector", "Security Guard", "Driver", "Electrician", "Plumber", "Housekeeping Staff"];
 const workCategories = ["Unskilled", "Semi-Skilled", "Skilled", "Highly Skilled"];
 const shifts = [
   { value: "general", label: "General (9AM-6PM)" },
@@ -79,12 +77,15 @@ export default function OnboardWorkerPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [agenciesLoading, setAgenciesLoading] = useState(false);
+  const [codeAgencyId, setCodeAgencyId] = useState("");
+  const [codeLoading, setCodeLoading] = useState(false);
+  const [isAutoCode, setIsAutoCode] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // Form state
   const [form, setForm] = useState({
     // Personal
-    first_name: "", last_name: "", father_name: "",
+    employee_code: "", first_name: "", last_name: "", father_name: "",
     date_of_birth: "", gender: "", blood_group: "",
     marital_status: "", mobile: "", alternate_mobile: "",
     email: "",
@@ -105,12 +106,10 @@ export default function OnboardWorkerPage() {
     DOCUMENT_TYPES.map((d) => ({ ...d, file: null }))
   );
 
-  // Load agencies when step 2 is reached
+  // Load agencies on mount (needed for both step 1 code generation and step 2)
   useEffect(() => {
-    if (currentStep === 2 && agencies.length === 0) {
-      loadAgencies();
-    }
-  }, [currentStep]);
+    loadAgencies();
+  }, []);
 
   async function loadAgencies() {
     setAgenciesLoading(true);
@@ -122,6 +121,33 @@ export default function OnboardWorkerPage() {
       toast.error("Failed to load agencies");
     } finally {
       setAgenciesLoading(false);
+    }
+  }
+
+  async function handleCodeAgencyChange(agencyId: string) {
+    if (agencyId === "__none") {
+      setCodeAgencyId("");
+      setIsAutoCode(false);
+      setForm((prev) => ({ ...prev, employee_code: "", agency_id: "" }));
+      return;
+    }
+    setCodeAgencyId(agencyId);
+    if (!agencyId) {
+      setIsAutoCode(false);
+      setForm((prev) => ({ ...prev, employee_code: "", agency_id: "" }));
+      return;
+    }
+    // Auto-fill agency_id for Step 2 as well
+    setForm((prev) => ({ ...prev, agency_id: agencyId }));
+    setCodeLoading(true);
+    try {
+      const res = await workersApi.nextCode(agencyId);
+      setForm((prev) => ({ ...prev, employee_code: res.data.employee_code }));
+      setIsAutoCode(true);
+    } catch {
+      toast.error("Failed to generate employee code");
+    } finally {
+      setCodeLoading(false);
     }
   }
 
@@ -138,7 +164,7 @@ export default function OnboardWorkerPage() {
   function validateStep(): boolean {
     switch (currentStep) {
       case 1:
-        if (!form.first_name || !form.last_name || !form.date_of_birth || !form.gender || !form.mobile) {
+        if (!form.employee_code || !form.first_name || !form.last_name || !form.date_of_birth || !form.gender || !form.mobile) {
           toast.error("Please fill all required fields");
           return false;
         }
@@ -180,6 +206,7 @@ export default function OnboardWorkerPage() {
     try {
       // Build worker payload
       const workerPayload: Record<string, unknown> = {
+        employee_code: form.employee_code || undefined,
         first_name: form.first_name,
         last_name: form.last_name,
         father_name: form.father_name,
@@ -343,6 +370,49 @@ export default function OnboardWorkerPage() {
           {/* Step 1: Personal Details */}
           {currentStep === 1 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Employee Code with Agency auto-generate */}
+              <div className="sm:col-span-2 space-y-2">
+                <Label>Employee Code <span className="text-red-500">*</span></Label>
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <Input
+                      placeholder={isAutoCode ? "" : "e.g. EMP001 (manual)"}
+                      value={form.employee_code}
+                      onChange={(e) => {
+                        setIsAutoCode(false);
+                        handleChange("employee_code", e.target.value);
+                      }}
+                      readOnly={codeLoading}
+                      className={cn(isAutoCode && "bg-green-50 border-green-300 font-semibold")}
+                    />
+                  </div>
+                  <div className="w-[220px]">
+                    {agenciesLoading ? (
+                      <div className="flex items-center gap-2 h-10 px-3 border rounded-md text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+                      </div>
+                    ) : (
+                      <Select value={codeAgencyId} onValueChange={handleCodeAgencyChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select agency to auto-generate" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">-- None (manual) --</SelectItem>
+                          {agencies.map((a) => (
+                            <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  {codeLoading && <Loader2 className="h-5 w-5 animate-spin text-blue-600 self-center" />}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {isAutoCode
+                    ? "Auto-generated from agency. You can edit if needed."
+                    : "Enter manually or select an agency to auto-generate."}
+                </p>
+              </div>
               <div className="space-y-1.5">
                 <Label>First Name <span className="text-red-500">*</span></Label>
                 <Input placeholder="e.g. Ramu" value={form.first_name} onChange={(e) => handleChange("first_name", e.target.value)} />
@@ -419,7 +489,9 @@ export default function OnboardWorkerPage() {
                   </div>
                 ) : (
                   <Select value={form.agency_id} onValueChange={(v) => handleChange("agency_id", v)}>
-                    <SelectTrigger><SelectValue placeholder="Select agency" /></SelectTrigger>
+                    <SelectTrigger className={cn(codeAgencyId && "bg-green-50 border-green-300")}>
+                      <SelectValue placeholder="Select agency" />
+                    </SelectTrigger>
                     <SelectContent>
                       {agencies.map((a) => (
                         <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
@@ -427,29 +499,22 @@ export default function OnboardWorkerPage() {
                     </SelectContent>
                   </Select>
                 )}
+                {codeAgencyId && (
+                  <p className="text-xs text-green-600 mt-1">Auto-filled from Employee Code agency selection</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label>Department <span className="text-red-500">*</span></Label>
-                <Select value={form.department} onValueChange={(v) => handleChange("department", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                  <SelectContent>
-                    {departments.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Input placeholder="Enter department" value={form.department} onChange={(e) => handleChange("department", e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label>Designation <span className="text-red-500">*</span></Label>
-                <Select value={form.designation} onValueChange={(v) => handleChange("designation", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select designation" /></SelectTrigger>
-                  <SelectContent>
-                    {designations.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Input placeholder="Enter designation" value={form.designation} onChange={(e) => handleChange("designation", e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label>Work Category <span className="text-red-500">*</span></Label>
                 <Select value={form.work_category} onValueChange={(v) => handleChange("work_category", v)}>
-                  <SelectTrigger><SelectValue placeholder="Skill category" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
                     {workCategories.map((c) => (
                       <SelectItem key={c} value={c.toLowerCase().replace("-", "_").replace(" ", "_")}>{c}</SelectItem>

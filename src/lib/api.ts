@@ -60,6 +60,8 @@ export const workersApi = {
   allDocuments: (params?: Record<string, unknown>) => api.get("/workers/documents/all", { params }),
   verifyDocument: (docId: string) => api.patch(`/workers/documents/${docId}/verify`),
   stats: () => api.get("/workers/stats"),
+  nextCode: (agencyId?: string) =>
+    api.get("/workers/next-code", { params: agencyId ? { agency_id: agencyId } : {} }),
 };
 
 // ─── Agencies ─────────────────────────────────────────────────────────────────
