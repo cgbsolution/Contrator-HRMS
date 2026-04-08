@@ -40,6 +40,7 @@ import {
   Power,
   XCircle,
   CalendarDays,
+  Trash2,
 } from "lucide-react";
 import { formatDate, workerStatusConfig, getInitials } from "@/lib/utils";
 import { workersApi } from "@/lib/api";
@@ -62,6 +63,13 @@ export default function ContractorsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [terminateDialog, setTerminateDialog] = useState<{ open: boolean; workerId: string; workerName: string }>({ open: false, workerId: "", workerName: "" });
   const [leavingDate, setLeavingDate] = useState(new Date().toISOString().split("T")[0]);
+
+  // Delete states
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; workerId: string; workerName: string }>({ open: false, workerId: "", workerName: "" });
+  const [bulkDeleteDialog, setBulkDeleteDialog] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const pageSize = 20;
 
   const fetchWorkers = useCallback(async () => {
@@ -93,10 +101,15 @@ export default function ContractorsPage() {
     fetchWorkers();
   }, [fetchWorkers]);
 
-  // Debounced search: reset page when filters change
+  // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [search, statusFilter, deptFilter]);
+
+  // Clear selection when page/filters change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [page, search, statusFilter, deptFilter]);
 
   async function handleAction(action: "activate" | "offboard" | "terminate", workerId: string, workerName: string) {
     if (action === "terminate") {
@@ -136,6 +149,76 @@ export default function ContractorsPage() {
     }
   }
 
+  // ── Single Delete ────────────────────────────────────────────────────────
+  async function confirmDelete() {
+    const { workerId, workerName } = deleteDialog;
+    setDeleteDialog({ open: false, workerId: "", workerName: "" });
+    setDeleteLoading(true);
+    try {
+      await workersApi.delete(workerId);
+      toast.success(`${workerName} deleted successfully`);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(workerId);
+        return next;
+      });
+      fetchWorkers();
+    } catch {
+      toast.error(`Failed to delete ${workerName}`);
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
+  // ── Bulk Delete ──────────────────────────────────────────────────────────
+  async function confirmBulkDelete() {
+    setBulkDeleteDialog(false);
+    setDeleteLoading(true);
+    const ids = Array.from(selectedIds);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const id of ids) {
+      try {
+        await workersApi.delete(id);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`${successCount} worker(s) deleted successfully`);
+    }
+    if (failCount > 0) {
+      toast.error(`${failCount} worker(s) failed to delete`);
+    }
+
+    setSelectedIds(new Set());
+    setDeleteLoading(false);
+    fetchWorkers();
+  }
+
+  // ── Selection helpers ────────────────────────────────────────────────────
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === workers.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(workers.map((w) => w.id)));
+    }
+  }
+
+  const allSelected = workers.length > 0 && selectedIds.size === workers.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < workers.length;
   const showFrom = total > 0 ? (page - 1) * pageSize + 1 : 0;
   const showTo = Math.min(page * pageSize, total);
 
@@ -200,6 +283,43 @@ export default function ContractorsPage() {
         </CardContent>
       </Card>
 
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium">
+                  {selectedIds.size} worker{selectedIds.size > 1 ? "s" : ""} selected
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground"
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  Clear selection
+                </Button>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="gap-2"
+                onClick={() => setBulkDeleteDialog(true)}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                Delete Selected ({selectedIds.size})
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Error State */}
       {error && (
         <Card>
@@ -231,6 +351,15 @@ export default function ContractorsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-secondary/50">
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                  </th>
                   <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Worker</th>
                   <th className="text-left px-4 py-3 font-semibold text-muted-foreground hidden md:table-cell">Code</th>
                   <th className="text-left px-4 py-3 font-semibold text-muted-foreground hidden sm:table-cell">Department</th>
@@ -245,8 +374,20 @@ export default function ContractorsPage() {
                   const statusCfg = workerStatusConfig[worker.status] || { label: worker.status, color: "bg-gray-100 text-gray-600" };
                   const fullName = `${worker.first_name} ${worker.last_name}`;
                   const isActioning = actionLoading === worker.id;
+                  const isSelected = selectedIds.has(worker.id);
                   return (
-                    <tr key={worker.id} className="hover:bg-secondary/30 transition-colors">
+                    <tr
+                      key={worker.id}
+                      className={`hover:bg-secondary/30 transition-colors ${isSelected ? "bg-blue-50/60" : ""}`}
+                    >
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(worker.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-xs shrink-0">
@@ -326,6 +467,16 @@ export default function ContractorsPage() {
                               {isActioning ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
                             </Button>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            title="Delete"
+                            disabled={isActioning || deleteLoading}
+                            onClick={() => setDeleteDialog({ open: true, workerId: worker.id, workerName: fullName })}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -375,7 +526,7 @@ export default function ContractorsPage() {
         </Card>
       )}
 
-      {/* Terminate - Date of Leaving Dialog */}
+      {/* ── Terminate Dialog ──────────────────────────────────────────────── */}
       <Dialog open={terminateDialog.open} onOpenChange={(open) => setTerminateDialog({ open, workerId: open ? terminateDialog.workerId : "", workerName: open ? terminateDialog.workerName : "" })}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -402,6 +553,72 @@ export default function ContractorsPage() {
             <Button onClick={confirmTerminate} disabled={!leavingDate} className="bg-red-600 hover:bg-red-500">
               <XCircle className="h-4 w-4 mr-1" />
               Confirm Terminate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Single Delete Confirmation Dialog ─────────────────────────────── */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, workerId: open ? deleteDialog.workerId : "", workerName: open ? deleteDialog.workerName : "" })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Delete Worker
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete <span className="font-semibold text-foreground">{deleteDialog.workerName}</span>? This will remove all their records including documents, attendance, and payroll data. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, workerId: "", workerName: "" })}>
+              Cancel
+            </Button>
+            <Button onClick={confirmDelete} disabled={deleteLoading} className="bg-red-600 hover:bg-red-500">
+              {deleteLoading ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-1" />
+              )}
+              Delete Permanently
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Bulk Delete Confirmation Dialog ────────────────────────────────── */}
+      <Dialog open={bulkDeleteDialog} onOpenChange={setBulkDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Delete {selectedIds.size} Worker{selectedIds.size > 1 ? "s" : ""}
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete <span className="font-semibold text-foreground">{selectedIds.size} selected worker{selectedIds.size > 1 ? "s" : ""}</span>? This will remove all their records including documents, attendance, and payroll data. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-3">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-red-700">
+                  This is a bulk delete operation. All selected workers and their associated data (documents, attendance, payroll, compliance records) will be permanently removed.
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setBulkDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmBulkDelete} disabled={deleteLoading} className="bg-red-600 hover:bg-red-500">
+              {deleteLoading ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-1" />
+              )}
+              Delete {selectedIds.size} Worker{selectedIds.size > 1 ? "s" : ""}
             </Button>
           </DialogFooter>
         </DialogContent>
