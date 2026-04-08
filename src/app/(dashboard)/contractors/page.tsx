@@ -26,6 +26,7 @@ import {
   UserPlus,
   Search,
   Download,
+  Upload,
   Eye,
   Phone,
   Building2,
@@ -41,6 +42,9 @@ import {
   XCircle,
   CalendarDays,
   Trash2,
+  FileSpreadsheet,
+  CheckCircle2,
+  X,
 } from "lucide-react";
 import { formatDate, workerStatusConfig, getInitials } from "@/lib/utils";
 import { workersApi } from "@/lib/api";
@@ -69,6 +73,17 @@ export default function ContractorsPage() {
   const [bulkDeleteDialog, setBulkDeleteDialog] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Import states
+  const [importDialog, setImportDialog] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    success: number;
+    failed: number;
+    errors: { row: number; errors: string[] }[];
+  } | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const pageSize = 20;
 
@@ -217,6 +232,66 @@ export default function ContractorsPage() {
     }
   }
 
+  // ── Import helpers ────────────────────────────────────────────────────────
+  async function downloadTemplate() {
+    try {
+      const res = await workersApi.importTemplate();
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "worker_import_template.xlsx";
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("Template downloaded");
+    } catch {
+      toast.error("Failed to download template");
+    }
+  }
+
+  function handleImportFile(file: File) {
+    if (!file.name.endsWith(".xlsx") && !file.name.endsWith(".xls")) {
+      toast.error("Only .xlsx Excel files are supported");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File too large. Maximum 10MB.");
+      return;
+    }
+    setImportFile(file);
+    setImportResult(null);
+  }
+
+  async function handleImportSubmit() {
+    if (!importFile) return;
+    setImportLoading(true);
+    setImportResult(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", importFile);
+      const res = await workersApi.bulkImport(formData);
+      setImportResult(res.data);
+      if (res.data.success > 0) {
+        toast.success(`${res.data.success} worker(s) imported successfully`);
+        fetchWorkers();
+      }
+      if (res.data.failed > 0) {
+        toast.error(`${res.data.failed} row(s) failed`);
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Import failed";
+      toast.error(msg);
+    } finally {
+      setImportLoading(false);
+    }
+  }
+
+  function closeImportDialog() {
+    setImportDialog(false);
+    setImportFile(null);
+    setImportResult(null);
+    setIsDragOver(false);
+  }
+
   const allSelected = workers.length > 0 && selectedIds.size === workers.length;
   const someSelected = selectedIds.size > 0 && selectedIds.size < workers.length;
   const showFrom = total > 0 ? (page - 1) * pageSize + 1 : 0;
@@ -231,6 +306,10 @@ export default function ContractorsPage() {
           <span>{total} workers</span>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => setImportDialog(true)}>
+            <Upload className="h-4 w-4" />
+            Import
+          </Button>
           <Button variant="outline" size="sm" className="gap-2">
             <Download className="h-4 w-4" />
             Export
@@ -620,6 +699,161 @@ export default function ContractorsPage() {
               )}
               Delete {selectedIds.size} Worker{selectedIds.size > 1 ? "s" : ""}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Import Workers Dialog ──────────────────────────────────────────── */}
+      <Dialog open={importDialog} onOpenChange={(open) => { if (!open) closeImportDialog(); else setImportDialog(true); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-blue-600" />
+              Import Workers from Excel
+            </DialogTitle>
+            <DialogDescription>
+              Upload an Excel file (.xlsx) to bulk import workers. Use the template to ensure correct format.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Download Template */}
+            <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">Download Template</p>
+                  <p className="text-xs text-blue-600">Excel file with all columns and instructions</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={downloadTemplate} className="gap-1.5 border-blue-300 text-blue-700 hover:bg-blue-100">
+                <Download className="h-3.5 w-3.5" />
+                Template
+              </Button>
+            </div>
+
+            {/* Drag & Drop Zone */}
+            {!importResult && (
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(false);
+                  const f = e.dataTransfer.files[0];
+                  if (f) handleImportFile(f);
+                }}
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = ".xlsx,.xls";
+                  input.onchange = (e) => {
+                    const f = (e.target as HTMLInputElement).files?.[0];
+                    if (f) handleImportFile(f);
+                  };
+                  input.click();
+                }}
+                className={`
+                  border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all
+                  ${isDragOver
+                    ? "border-blue-500 bg-blue-50"
+                    : importFile
+                      ? "border-green-400 bg-green-50"
+                      : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
+                  }
+                `}
+              >
+                {importFile ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-2">
+                      <FileSpreadsheet className="h-8 w-8 text-green-600" />
+                    </div>
+                    <p className="text-sm font-medium text-green-800">{importFile.name}</p>
+                    <p className="text-xs text-green-600">
+                      {(importFile.size / 1024).toFixed(1)} KB — Ready to import
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-muted-foreground"
+                      onClick={(e) => { e.stopPropagation(); setImportFile(null); setImportResult(null); }}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Remove file
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Upload className={`h-10 w-10 mx-auto ${isDragOver ? "text-blue-500" : "text-gray-400"}`} />
+                    <p className="text-sm font-medium text-gray-700">
+                      {isDragOver ? "Drop your file here" : "Drag & drop Excel file here"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      or click to browse — .xlsx only, max 10MB, up to 500 rows
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Import Result */}
+            {importResult && (
+              <div className="space-y-3">
+                {/* Success */}
+                {importResult.success > 0 && (
+                  <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                    <p className="text-sm text-green-800">
+                      <span className="font-semibold">{importResult.success}</span> worker(s) imported successfully
+                    </p>
+                  </div>
+                )}
+
+                {/* Errors */}
+                {importResult.failed > 0 && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
+                      <p className="text-sm text-red-800">
+                        <span className="font-semibold">{importResult.failed}</span> row(s) failed
+                      </p>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto space-y-1">
+                      {importResult.errors.map((err, idx) => (
+                        <div key={idx} className="text-xs text-red-700 bg-red-100/50 rounded px-2 py-1">
+                          <span className="font-medium">Row {err.row}:</span> {err.errors.join(", ")}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={closeImportDialog}>
+              {importResult ? "Close" : "Cancel"}
+            </Button>
+            {!importResult && (
+              <Button
+                onClick={handleImportSubmit}
+                disabled={!importFile || importLoading}
+                className="gap-2"
+              >
+                {importLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Importing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    Import Workers
+                  </>
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

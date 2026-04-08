@@ -82,6 +82,13 @@ export const workersApi = {
   stats: () => api.get("/workers/stats"),
   nextCode: (agencyId?: string) =>
     api.get("/workers/next-code", { params: agencyId ? { agency_id: agencyId } : {} }),
+  importTemplate: () =>
+    api.get("/workers/import/template", { responseType: "blob" }),
+  bulkImport: (data: FormData) =>
+    api.post("/workers/import/bulk", data, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 120000,
+    }),
 };
 
 // ─── Agencies ─────────────────────────────────────────────────────────────────
