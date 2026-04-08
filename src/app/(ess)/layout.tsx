@@ -1,26 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { EssSidebar } from "@/components/layout/ess-sidebar";
 import { Menu, HardHat } from "lucide-react";
+import { useSession } from "@/lib/useSession";
 
 export default function EssLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [user, setUser] = useState<{ name: string; role: string } | null>(null);
 
+  // Handles auth check, session expiry warning & auto-logout
+  useSession();
+
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
     try {
       const stored = localStorage.getItem("user");
       if (stored) setUser(JSON.parse(stored));
     } catch {}
-  }, [router]);
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-secondary/30">

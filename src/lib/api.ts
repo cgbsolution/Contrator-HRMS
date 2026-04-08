@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "sonner";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -17,13 +18,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ─── Response interceptor: handle 401 ────────────────────────────────────────
+// ─── Response interceptor: handle 401 (session expired) ─────────────────────
+let isRedirecting = false;
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== "undefined") {
+    if (error.response?.status === 401 && typeof window !== "undefined" && !isRedirecting) {
+      isRedirecting = true;
       localStorage.removeItem("access_token");
-      window.location.href = "/login";
+      localStorage.removeItem("user");
+      toast.error("Session expired. Please log in again.", { duration: 5000 });
+      setTimeout(() => {
+        window.location.href = "/login";
+        isRedirecting = false;
+      }, 500);
     }
     return Promise.reject(error);
   }

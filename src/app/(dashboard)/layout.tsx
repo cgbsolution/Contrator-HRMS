@@ -1,19 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { cn } from "@/lib/utils";
+import { useSession } from "@/lib/useSession";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) router.push("/login");
-  }, [router]);
+  // Handles auth check, session expiry warning & auto-logout
+  useSession();
 
   return (
     <div className="flex h-screen overflow-hidden bg-secondary/30">
