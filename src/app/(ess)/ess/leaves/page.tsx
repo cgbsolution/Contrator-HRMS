@@ -6,6 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, Plus, X, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { essApi } from "@/lib/api";
@@ -139,19 +147,18 @@ export default function EssLeavesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Leave Type *</Label>
-                  <select
-                    value={leaveTypeId}
-                    onChange={(e) => setLeaveTypeId(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 text-sm mt-1"
-                    required
-                  >
-                    <option value="">Select leave type</option>
-                    {leaveTypes.map((lt) => (
-                      <option key={lt.id as string} value={lt.id as string}>
-                        {lt.name as string} ({lt.code as string})
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={leaveTypeId} onValueChange={setLeaveTypeId} required>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select leave type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {leaveTypes.map((lt) => (
+                        <SelectItem key={lt.id as string} value={lt.id as string}>
+                          {lt.name as string} ({lt.code as string})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex items-end gap-2">
@@ -186,10 +193,10 @@ export default function EssLeavesPage() {
 
               <div>
                 <Label>Reason</Label>
-                <textarea
+                <Textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm mt-1 min-h-[80px]"
+                  className="mt-1"
                   placeholder="Enter reason for leave..."
                 />
               </div>

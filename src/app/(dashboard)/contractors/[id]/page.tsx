@@ -8,6 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -276,29 +283,31 @@ export default function WorkerDetailPage() {
               <EditField label="Designation" field="designation" />
               <div>
                 <Label className="text-xs">Work Category</Label>
-                <select
-                  value={String(editData.work_category || "")}
-                  onChange={(e) => setEditData({ ...editData, work_category: e.target.value })}
-                  className="w-full border rounded-md px-3 py-2 text-sm mt-1 h-9"
-                >
-                  <option value="unskilled">Unskilled</option>
-                  <option value="semi_skilled">Semi Skilled</option>
-                  <option value="skilled">Skilled</option>
-                  <option value="highly_skilled">Highly Skilled</option>
-                </select>
+                <Select value={String(editData.work_category || "")} onValueChange={(v) => setEditData({ ...editData, work_category: v })}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unskilled">Unskilled</SelectItem>
+                    <SelectItem value="semi_skilled">Semi Skilled</SelectItem>
+                    <SelectItem value="skilled">Skilled</SelectItem>
+                    <SelectItem value="highly_skilled">Highly Skilled</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label className="text-xs">Shift</Label>
-                <select
-                  value={String(editData.shift || "")}
-                  onChange={(e) => setEditData({ ...editData, shift: e.target.value })}
-                  className="w-full border rounded-md px-3 py-2 text-sm mt-1 h-9"
-                >
-                  <option value="general">General</option>
-                  <option value="morning">Morning</option>
-                  <option value="afternoon">Afternoon</option>
-                  <option value="night">Night</option>
-                </select>
+                <Select value={String(editData.shift || "")} onValueChange={(v) => setEditData({ ...editData, shift: v })}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="morning">Morning</SelectItem>
+                    <SelectItem value="afternoon">Afternoon</SelectItem>
+                    <SelectItem value="night">Night</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           ) : (

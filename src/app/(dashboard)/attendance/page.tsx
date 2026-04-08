@@ -13,6 +13,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Search,
   Save,
   RefreshCw,
@@ -22,6 +25,9 @@ import {
   XCircle,
   Users,
   Loader2,
+  Eye,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import { attendanceCodeConfig, formatDate } from "@/lib/utils";
 import { attendanceApi, workersApi } from "@/lib/api";
@@ -38,6 +44,10 @@ interface AttendanceRecord {
   in_time: string;
   out_time: string;
   overtime_hours: number;
+  punch_in?: string;
+  punch_out?: string;
+  total_hours?: number;
+  punch_count?: number;
 }
 
 const ATTENDANCE_CODES = [
@@ -56,6 +66,8 @@ export default function AttendancePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [outTime, setOutTime] = useState<Record<string, string>>({});
+  const [detailWorker, setDetailWorker] = useState<AttendanceRecord | null>(null);
 
   const loadAttendance = useCallback(async () => {
     setIsLoading(true);
@@ -76,6 +88,9 @@ export default function AttendancePage() {
           Object.fromEntries(
             records.map((r) => [r.worker_id, r.overtime_hours || 0])
           )
+        );
+        setOutTime(
+          Object.fromEntries(records.map((r) => [r.worker_id, r.out_time || ""]))
         );
         setShifts(
           Object.fromEntries(records.map((r) => [r.worker_id, r.shift || "General"]))
@@ -325,10 +340,18 @@ export default function AttendancePage() {
                   Status
                 </th>
                 <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground hidden md:table-cell">
-                  In Time
+                  Punch In
+                </th>
+                <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground hidden md:table-cell">
+                  Punch Out
                 </th>
                 <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground hidden lg:table-cell">
-                  OT Hours
+                  Total Hrs
+                </th>
+                <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground hidden lg:table-cell">
+                  OT Hrs
+                </th>
+                <th className="text-center px-4 py-2.5 font-semibold text-muted-foreground w-14">
                 </th>
               </tr>
             </thead>
@@ -366,42 +389,60 @@ export default function AttendancePage() {
                         >
                           {code}
                         </span>
-                        <select
-                          value={code}
+                        <Select value={code} onValueChange={(v) => setAttendance((prev) => ({ ...prev, [worker.worker_id]: v }))}>
+                          <SelectTrigger className="h-8 w-[140px] text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ATTENDANCE_CODES.map((c) => {
+                              const cc = attendanceCodeConfig[c];
+                              return (
+                                <SelectItem key={c} value={c}>
+                                  {c} - {cc.label}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 hidden md:table-cell">
+                      {worker.punch_in ? (
+                        <span className="text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded flex items-center gap-1 w-fit">
+                          <LogIn className="h-3 w-3" />
+                          {worker.punch_in}
+                        </span>
+                      ) : (
+                        <Input
+                          type="time"
+                          className="h-8 w-28 text-xs"
+                          value={inTime[worker.worker_id] || ""}
                           onChange={(e) =>
-                            setAttendance((prev) => ({
+                            setInTime((prev) => ({
                               ...prev,
                               [worker.worker_id]: e.target.value,
                             }))
                           }
-                          className="h-8 border rounded-md px-1 text-xs bg-background cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring"
-                        >
-                          {ATTENDANCE_CODES.map((c) => {
-                            const cc = attendanceCodeConfig[c];
-                            return (
-                              <option key={c} value={c}>
-                                {c} - {cc.label}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </div>
+                          disabled={!["P", "HP", "WOP", "OD", "OT"].includes(code)}
+                        />
+                      )}
                     </td>
                     <td className="px-4 py-2.5 hidden md:table-cell">
-                      <Input
-                        type="time"
-                        className="h-8 w-28 text-xs"
-                        value={inTime[worker.worker_id] || ""}
-                        onChange={(e) =>
-                          setInTime((prev) => ({
-                            ...prev,
-                            [worker.worker_id]: e.target.value,
-                          }))
-                        }
-                        disabled={
-                          !["P", "HP", "WOP", "OD", "OT"].includes(code)
-                        }
-                      />
+                      {worker.punch_out ? (
+                        <span className="text-xs font-medium text-red-700 bg-red-50 px-2 py-1 rounded flex items-center gap-1 w-fit">
+                          <LogOut className="h-3 w-3" />
+                          {worker.punch_out}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">--:--</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 hidden lg:table-cell">
+                      {worker.total_hours != null ? (
+                        <span className="text-xs font-semibold">{worker.total_hours}h</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">--</span>
+                      )}
                     </td>
                     <td className="px-4 py-2.5 hidden lg:table-cell">
                       <Input
@@ -420,13 +461,22 @@ export default function AttendancePage() {
                         disabled={!["P", "HP", "WOP", "OT"].includes(code)}
                       />
                     </td>
+                    <td className="px-4 py-2.5 text-center">
+                      <button
+                        onClick={() => setDetailWorker(worker)}
+                        className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={9}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
                     No workers found.
@@ -437,6 +487,86 @@ export default function AttendancePage() {
           </table>
         </div>
       </Card>
+
+      {/* ── Worker Day Detail Dialog ────────────────────────────────────── */}
+      <Dialog open={!!detailWorker} onOpenChange={(open) => { if (!open) setDetailWorker(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-blue-600" />
+              {detailWorker?.worker_name}
+            </DialogTitle>
+            <DialogDescription>
+              Attendance details for {formatDate(date)} — {detailWorker?.employee_code}
+            </DialogDescription>
+          </DialogHeader>
+          {detailWorker && (
+            <div className="space-y-4 py-2">
+              {/* Status Badge */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Status:</span>
+                {(() => {
+                  const code = attendance[detailWorker.worker_id] || "P";
+                  const cfg = attendanceCodeConfig[code] || attendanceCodeConfig["P"];
+                  return (
+                    <span className={`inline-flex items-center justify-center h-7 min-w-[32px] text-xs font-bold rounded px-2 ${cfg.color}`}>
+                      {code} - {cfg.label}
+                    </span>
+                  );
+                })()}
+              </div>
+
+              {/* Time Cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                  <LogIn className="h-4 w-4 text-green-600 mx-auto mb-1" />
+                  <p className="text-xs text-green-600 font-medium">Punch In</p>
+                  <p className="text-sm font-bold text-green-800 mt-1">
+                    {detailWorker.punch_in || inTime[detailWorker.worker_id] || "--:--"}
+                  </p>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                  <LogOut className="h-4 w-4 text-red-600 mx-auto mb-1" />
+                  <p className="text-xs text-red-600 font-medium">Punch Out</p>
+                  <p className="text-sm font-bold text-red-800 mt-1">
+                    {detailWorker.punch_out || "--:--"}
+                  </p>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                  <Clock className="h-4 w-4 text-blue-600 mx-auto mb-1" />
+                  <p className="text-xs text-blue-600 font-medium">Total Hours</p>
+                  <p className="text-sm font-bold text-blue-800 mt-1">
+                    {detailWorker.total_hours != null ? `${detailWorker.total_hours}h` : "--"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm bg-secondary/30 rounded-lg p-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Department</p>
+                  <p className="font-medium">{detailWorker.department || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Shift</p>
+                  <p className="font-medium capitalize">{shifts[detailWorker.worker_id] || detailWorker.shift || "General"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Overtime Hours</p>
+                  <p className="font-medium">{overtime[detailWorker.worker_id] || detailWorker.overtime_hours || 0}h</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Punch Count</p>
+                  <p className="font-medium">{detailWorker.punch_count || 0} punch(es)</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailWorker(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

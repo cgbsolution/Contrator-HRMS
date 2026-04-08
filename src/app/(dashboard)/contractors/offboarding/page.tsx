@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -223,11 +224,9 @@ export default function OffboardingPage() {
                         key={item.id}
                         className="flex items-center gap-2 text-sm cursor-pointer hover:bg-secondary/20 rounded px-2 py-1"
                       >
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={item.checked}
-                          onChange={() => toggleCheckItem(worker.id, item.id)}
-                          className="h-4 w-4 rounded border-gray-300"
+                          onCheckedChange={() => toggleCheckItem(worker.id, item.id)}
                         />
                         <span className={item.checked ? "line-through text-muted-foreground" : ""}>
                           {item.label}

@@ -98,6 +98,7 @@ export const agenciesApi = {
   create: (data: Record<string, unknown>) => api.post("/agencies", data),
   update: (id: string, data: Record<string, unknown>) => api.patch(`/agencies/${id}`, data),
   delete: (id: string) => api.delete(`/agencies/${id}`),
+  toggleActive: (id: string) => api.patch(`/agencies/${id}/deactivate`),
 };
 
 // ─── Attendance ───────────────────────────────────────────────────────────────

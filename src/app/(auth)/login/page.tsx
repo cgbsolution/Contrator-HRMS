@@ -12,8 +12,8 @@ import { authApi } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("info@cgbindia.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -118,11 +118,7 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 pt-4 border-t border-slate-700">
-              <p className="text-center text-xs text-slate-500">
-                Demo: info@cgbindia.com / admin123
-              </p>
-            </div>
+            <div className="mt-6 pt-4 border-t border-slate-700" />
           </CardContent>
         </Card>
 

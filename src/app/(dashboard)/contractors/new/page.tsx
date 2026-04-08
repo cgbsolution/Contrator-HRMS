@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -598,8 +599,7 @@ export default function OnboardWorkerPage() {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label>Permanent Address <span className="text-red-500">*</span></Label>
-                <textarea
-                  className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Textarea
                   placeholder="House No., Village/Town, District"
                   value={form.permanent_address}
                   onChange={(e) => handleChange("permanent_address", e.target.value)}
@@ -607,8 +607,7 @@ export default function OnboardWorkerPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Current Address (if different)</Label>
-                <textarea
-                  className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Textarea
                   placeholder="Current residence address"
                   value={form.current_address}
                   onChange={(e) => handleChange("current_address", e.target.value)}

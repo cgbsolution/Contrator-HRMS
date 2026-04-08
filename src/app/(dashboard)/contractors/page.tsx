@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   UserPlus,
   Search,
@@ -431,12 +432,10 @@ export default function ContractorsPage() {
               <thead>
                 <tr className="border-b bg-secondary/50">
                   <th className="px-4 py-3 w-10">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={allSelected}
-                      ref={(el) => { if (el) el.indeterminate = someSelected; }}
-                      onChange={toggleSelectAll}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      indeterminate={someSelected}
+                      onCheckedChange={toggleSelectAll}
                     />
                   </th>
                   <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Worker</th>
@@ -460,11 +459,9 @@ export default function ContractorsPage() {
                       className={`hover:bg-secondary/30 transition-colors ${isSelected ? "bg-blue-50/60" : ""}`}
                     >
                       <td className="px-4 py-3">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={isSelected}
-                          onChange={() => toggleSelect(worker.id)}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          onCheckedChange={() => toggleSelect(worker.id)}
                         />
                       </td>
                       <td className="px-4 py-3">

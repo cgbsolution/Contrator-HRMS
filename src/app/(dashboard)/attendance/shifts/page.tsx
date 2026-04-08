@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -473,17 +474,15 @@ export default function ShiftManagementPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="nightShift"
                 checked={shiftForm.is_night_shift}
-                onChange={(e) =>
+                onCheckedChange={(checked) =>
                   setShiftForm({
                     ...shiftForm,
-                    is_night_shift: e.target.checked,
+                    is_night_shift: !!checked,
                   })
                 }
-                className="rounded border-gray-300"
               />
               <Label htmlFor="nightShift">Night Shift</Label>
             </div>

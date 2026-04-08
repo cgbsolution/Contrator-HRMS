@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, PiggyBank, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { essApi } from "@/lib/api";
@@ -116,14 +123,15 @@ export default function EssInvestmentsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Financial Year</Label>
-                  <select
-                    value={form.financial_year}
-                    onChange={(e) => setForm({ ...form, financial_year: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 text-sm mt-1"
-                  >
-                    <option value={`${currentYear}-${String(currentYear + 1).slice(2)}`}>{currentYear}-{String(currentYear + 1).slice(2)}</option>
-                    <option value={fy}>{fy}</option>
-                  </select>
+                  <Select value={form.financial_year} onValueChange={(v) => setForm({ ...form, financial_year: v })}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={`${currentYear}-${String(currentYear + 1).slice(2)}`}>{currentYear}-{String(currentYear + 1).slice(2)}</SelectItem>
+                      <SelectItem value={fy}>{fy}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>Section 80C (PPF, ELSS, LIC, etc.)</Label>
