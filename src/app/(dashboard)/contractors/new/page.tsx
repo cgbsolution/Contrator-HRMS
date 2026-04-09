@@ -100,7 +100,7 @@ export default function OnboardWorkerPage() {
     // Employment
     agency_id: "", department: "", designation: "",
     work_category: "", shift: "", date_of_joining: new Date().toISOString().split("T")[0],
-    basic_wage: "", da: "", hra: "", other_allowances: "",
+    basic_wage: "", da: "", hra: "", other_allowances: "", bonus: "",
     // Address
     permanent_address: "", current_address: "", state: "", district: "", pincode: "",
     // Statutory
@@ -194,7 +194,7 @@ export default function OnboardWorkerPage() {
   function validateStep(): boolean {
     switch (currentStep) {
       case 1:
-        if (!form.employee_code || !form.first_name || !form.last_name || !form.date_of_birth || !form.gender || !form.mobile) {
+        if (!form.employee_code || !form.first_name || !form.date_of_birth || !form.gender || !form.mobile) {
           toast.error("Please fill all required fields");
           return false;
         }
@@ -258,6 +258,7 @@ export default function OnboardWorkerPage() {
         da: Number(form.da) || 0,
         hra: Number(form.hra) || 0,
         other_allowances: Number(form.other_allowances) || 0,
+        bonus: Number(form.bonus) || 0,
         permanent_address: form.permanent_address,
         current_address: form.current_address || form.permanent_address,
         state: form.state,
@@ -453,7 +454,7 @@ export default function OnboardWorkerPage() {
                 <Input placeholder="e.g. Ramu" value={form.first_name} onChange={(e) => handleChange("first_name", e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label>Last Name <span className="text-red-500">*</span></Label>
+                <Label>Last Name</Label>
                 <Input placeholder="e.g. Prasad" value={form.last_name} onChange={(e) => handleChange("last_name", e.target.value)} />
               </div>
               <div className="space-y-1.5">
@@ -572,7 +573,7 @@ export default function OnboardWorkerPage() {
               </div>
               <div className="sm:col-span-2 border-t pt-4">
                 <p className="font-semibold text-sm mb-3 text-muted-foreground">Wage Details (Monthly)</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <div className="space-y-1.5">
                     <Label>Basic Wage <span className="text-red-500">*</span></Label>
                     <Input type="number" placeholder="0" value={form.basic_wage} onChange={(e) => handleChange("basic_wage", e.target.value)} />
@@ -588,6 +589,10 @@ export default function OnboardWorkerPage() {
                   <div className="space-y-1.5">
                     <Label>Other Allow.</Label>
                     <Input type="number" placeholder="0" value={form.other_allowances} onChange={(e) => handleChange("other_allowances", e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Bonus</Label>
+                    <Input type="number" placeholder="0" value={form.bonus} onChange={(e) => handleChange("bonus", e.target.value)} />
                   </div>
                 </div>
               </div>
