@@ -18,21 +18,32 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ─── Response interceptor: handle 401 (session expired) ─────────────────────
+// ─── Response interceptor: handle 401 (session expired) + stale token 403 ───
 let isRedirecting = false;
+
+function forceLogout(message: string) {
+  if (isRedirecting || typeof window === "undefined") return;
+  isRedirecting = true;
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("user");
+  toast.error(message, { duration: 5000 });
+  setTimeout(() => {
+    window.location.href = "/login";
+    isRedirecting = false;
+  }, 500);
+}
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== "undefined" && !isRedirecting) {
-      isRedirecting = true;
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("user");
-      toast.error("Session expired. Please log in again.", { duration: 5000 });
-      setTimeout(() => {
-        window.location.href = "/login";
-        isRedirecting = false;
-      }, 500);
+    const status = error.response?.status;
+    const detail: string = error.response?.data?.detail || "";
+
+    if (status === 401) {
+      forceLogout("Session expired. Please log in again.");
+    } else if (status === 403 && detail.includes("No tenant context")) {
+      // Stale JWT from before multi-tenancy was added → force re-login
+      forceLogout("Your session is outdated. Please log in again.");
     }
     return Promise.reject(error);
   }
