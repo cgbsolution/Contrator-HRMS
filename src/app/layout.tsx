@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ContractorHRMS – Plant Workforce Management",
+  title: "ContractorHRMS",
   description:
     "End-to-end contractor workforce management: onboarding, attendance, payroll & statutory compliance for blue-collar workers at manufacturing plants in India.",
   manifest: "/manifest.json",
