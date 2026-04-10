@@ -15,8 +15,11 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "hr_manager" | "plant_manager" | "supervisor" | "viewer";
+  role: "super_admin" | "admin" | "hr_manager" | "plant_manager" | "supervisor" | "viewer" | "worker";
   plant_id: string;
+  tenant_id?: string | null;
+  tenant_name?: string | null;
+  is_super_admin?: boolean;
   avatar?: string;
 }
 

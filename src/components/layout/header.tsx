@@ -46,7 +46,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const pathname = usePathname();
-  const [user, setUser] = useState<{ name: string; role: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; role: string; tenant_name?: string } | null>(null);
   const [notifications] = useState(3);
 
   useEffect(() => {
@@ -77,6 +77,14 @@ export function Header({ onMenuClick }: HeaderProps) {
 
       {/* Page title */}
       <h1 className="hidden lg:block text-xl font-semibold text-foreground">{title}</h1>
+
+      {/* Tenant badge */}
+      {user?.tenant_name && (
+        <div className="hidden md:flex items-center gap-1.5 ml-3 px-2.5 py-1 rounded-full bg-purple-50 border border-purple-200">
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />
+          <span className="text-xs font-medium text-purple-700">{user.tenant_name}</span>
+        </div>
+      )}
 
       {/* Spacer */}
       <div className="flex-1" />

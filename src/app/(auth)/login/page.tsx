@@ -27,7 +27,9 @@ export default function LoginPage() {
       toast.success("Login successful!");
 
       // Route based on role
-      if (res.data.user.role === "worker") {
+      if (res.data.user.is_super_admin) {
+        router.push("/super-admin/tenants");
+      } else if (res.data.user.role === "worker") {
         router.push("/ess/dashboard");
       } else {
         router.push("/dashboard");

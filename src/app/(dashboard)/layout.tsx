@@ -1,16 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/useSession";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Handles auth check, session expiry warning & auto-logout
   useSession();
+
+  // Redirect super admins to their console
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        const user = JSON.parse(stored);
+        if (user.is_super_admin) {
+          router.push("/super-admin/tenants");
+        }
+      }
+    } catch {}
+  }, [router]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-secondary/30">

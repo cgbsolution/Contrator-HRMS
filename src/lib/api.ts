@@ -38,6 +38,17 @@ api.interceptors.response.use(
   }
 );
 
+// ─── Tenants (Super Admin) ────────────────────────────────────────────────────
+export const tenantsApi = {
+  list: (params?: Record<string, unknown>) => api.get("/tenants", { params }),
+  get: (id: string) => api.get(`/tenants/${id}`),
+  create: (data: Record<string, unknown>) => api.post("/tenants", data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/tenants/${id}`, data),
+  toggleActive: (id: string) => api.patch(`/tenants/${id}/toggle-active`),
+  delete: (id: string) => api.delete(`/tenants/${id}`),
+  resetAdminPassword: (id: string) => api.post(`/tenants/${id}/reset-admin-password`),
+};
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export const authApi = {
   login: (email: string, password: string) =>
