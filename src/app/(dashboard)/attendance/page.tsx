@@ -32,6 +32,7 @@ import {
 import { attendanceCodeConfig, formatDate } from "@/lib/utils";
 import { attendanceApi, workersApi } from "@/lib/api";
 import { toast } from "sonner";
+import { TablePageSkeleton } from "@/components/ui/page-skeleton";
 
 interface AttendanceRecord {
   id?: string;
@@ -180,14 +181,7 @@ export default function AttendancePage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <span className="ml-3 text-muted-foreground">Loading attendance...</span>
-      </div>
-    );
-  }
+  if (isLoading) return <TablePageSkeleton />;
 
   if (error) {
     return (

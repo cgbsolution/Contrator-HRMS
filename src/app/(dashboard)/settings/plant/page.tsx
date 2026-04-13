@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, AlertTriangle, RefreshCw, Building2, Save } from "lucide-react";
 import { settingsApi } from "@/lib/api";
 import { toast } from "sonner";
+import { CardGridSkeleton } from "@/components/ui/page-skeleton";
 
 interface Plant {
   id: string;
@@ -100,16 +101,7 @@ export default function PlantSetupPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="text-sm text-muted-foreground">Loading plant data...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <CardGridSkeleton />;
 
   if (error) {
     return (

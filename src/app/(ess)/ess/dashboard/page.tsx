@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, IndianRupee, ClipboardList, Clock, Loader2 } from "lucide-react";
 import { essApi } from "@/lib/api";
+import { ESSPageSkeleton } from "@/components/ui/page-skeleton";
 
 export default function EssDashboard() {
   const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
@@ -32,13 +33,7 @@ export default function EssDashboard() {
     });
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
-      </div>
-    );
-  }
+  if (loading) return <ESSPageSkeleton />;
 
   const latestPayslip = payslips[0] as Record<string, unknown> | undefined;
 

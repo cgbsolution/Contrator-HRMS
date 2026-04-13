@@ -31,6 +31,7 @@ import { Plus, Loader2, Briefcase, RefreshCw } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { payrollApi } from "@/lib/api";
 import { toast } from "sonner";
+import { CardGridSkeleton } from "@/components/ui/page-skeleton";
 
 interface SalaryStructure {
   id: string;
@@ -119,16 +120,7 @@ export default function SalaryStructuresPage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <span className="ml-3 text-muted-foreground">
-          Loading salary structures...
-        </span>
-      </div>
-    );
-  }
+  if (isLoading) return <CardGridSkeleton />;
 
   if (error) {
     return (

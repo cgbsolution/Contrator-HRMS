@@ -16,6 +16,7 @@ import {
 import { Loader2, PiggyBank, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { essApi } from "@/lib/api";
+import { ESSPageSkeleton } from "@/components/ui/page-skeleton";
 
 export default function EssInvestmentsPage() {
   const [declarations, setDeclarations] = useState<Record<string, unknown>[]>([]);
@@ -90,13 +91,7 @@ export default function EssInvestmentsPage() {
     verified: "bg-green-100 text-green-700",
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
-      </div>
-    );
-  }
+  if (loading) return <ESSPageSkeleton />;
 
   const total = form.section_80c + form.section_80d + form.hra_exemption + form.lta + form.nps_80ccd + form.other_deductions;
 

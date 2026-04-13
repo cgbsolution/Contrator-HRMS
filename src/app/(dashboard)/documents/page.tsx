@@ -12,6 +12,7 @@ import {
 import { formatDate } from "@/lib/utils";
 import { workersApi } from "@/lib/api";
 import { toast } from "sonner";
+import { TablePageSkeleton } from "@/components/ui/page-skeleton";
 
 const DOC_TYPE_LABELS: Record<string, string> = {
   aadhaar: "Aadhaar Card",

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { tenantsApi } from "@/lib/api";
 import { toast } from "sonner";
+import { CardGridSkeleton } from "@/components/ui/page-skeleton";
 
 interface Tenant {
   id: string;
@@ -214,14 +215,7 @@ export default function SuperAdminTenantsPage() {
         </Card>
       )}
 
-      {loading && !error && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-600 mx-auto" />
-            <p className="text-sm text-muted-foreground mt-3">Loading tenants...</p>
-          </CardContent>
-        </Card>
-      )}
+      {loading && !error && <CardGridSkeleton />}
 
       {/* Tenants Grid */}
       {!loading && !error && (

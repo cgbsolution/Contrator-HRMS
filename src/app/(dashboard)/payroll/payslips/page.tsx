@@ -30,6 +30,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { payrollApi } from "@/lib/api";
 import { toast } from "sonner";
+import { TablePageSkeleton } from "@/components/ui/page-skeleton";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",

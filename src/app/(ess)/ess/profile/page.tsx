@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { essApi, authApi } from "@/lib/api";
 import { toast } from "sonner";
+import { DetailPageSkeleton } from "@/components/ui/page-skeleton";
 
 export default function EssProfilePage() {
   const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
@@ -48,13 +49,7 @@ export default function EssProfilePage() {
     } finally { setChangingPw(false); }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
-      </div>
-    );
-  }
+  if (loading) return <DetailPageSkeleton />;
 
   if (!profile) {
     return (

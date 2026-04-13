@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -29,7 +29,6 @@ import {
   User,
 } from "lucide-react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 interface NavItem {
@@ -37,7 +36,6 @@ interface NavItem {
   href?: string;
   icon: React.ElementType;
   children?: NavItem[];
-  badge?: string;
 }
 
 const navItems: NavItem[] = [
@@ -84,16 +82,8 @@ const navItems: NavItem[] = [
       { label: "Min. Wages", href: "/compliance/min-wages", icon: AlertCircle },
     ],
   },
-  {
-    label: "Documents",
-    href: "/documents",
-    icon: FileText,
-  },
-  {
-    label: "Reports",
-    href: "/reports",
-    icon: BarChart3,
-  },
+  { label: "Documents", href: "/documents", icon: FileText },
+  { label: "Reports", href: "/reports", icon: BarChart3 },
   {
     label: "Settings",
     icon: Settings,
@@ -115,7 +105,9 @@ function NavItemComponent({ item, depth = 0 }: { item: NavItem; depth?: number }
     return false;
   });
 
-  const isActive = item.href ? pathname === item.href : false;
+  const isActive = item.href
+    ? pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"))
+    : false;
   const Icon = item.icon;
 
   if (item.children) {
@@ -128,28 +120,33 @@ function NavItemComponent({ item, depth = 0 }: { item: NavItem; depth?: number }
         <button
           onClick={() => setOpen(!open)}
           className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
+            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
             hasActiveChild
-              ? "bg-sidebar-accent text-white"
-              : "text-slate-300 hover:bg-sidebar-accent hover:text-white"
+              ? "bg-white/10 text-white"
+              : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
           )}
         >
-          <Icon className="h-4 w-4 shrink-0" />
+          <Icon className="h-[18px] w-[18px] shrink-0" />
           <span className="flex-1 text-left">{item.label}</span>
-          {item.badge && (
-            <span className="bg-blue-600 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
-              {item.badge}
-            </span>
-          )}
-          {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 transition-transform duration-200",
+              open ? "rotate-0" : "-rotate-90"
+            )}
+          />
         </button>
-        {open && (
-          <div className="ml-4 mt-1 space-y-0.5 border-l border-slate-700 pl-3">
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-200",
+            open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          )}
+        >
+          <div className="ml-[18px] mt-0.5 space-y-0.5 border-l border-white/10 pl-4 py-1">
             {item.children.map((child) => (
               <NavItemComponent key={child.label} item={child} depth={depth + 1} />
             ))}
           </div>
-        )}
+        </div>
       </div>
     );
   }
@@ -158,19 +155,15 @@ function NavItemComponent({ item, depth = 0 }: { item: NavItem; depth?: number }
     <Link
       href={item.href!}
       className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150",
+        "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+        depth > 0 ? "py-1.5" : "",
         isActive
-          ? "bg-blue-600 text-white shadow-sm"
-          : "text-slate-300 hover:bg-sidebar-accent hover:text-white"
+          ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/20"
+          : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
       )}
     >
-      <Icon className="h-4 w-4 shrink-0" />
+      <Icon className={cn("shrink-0", depth > 0 ? "h-[15px] w-[15px]" : "h-[18px] w-[18px]")} />
       <span>{item.label}</span>
-      {item.badge && (
-        <span className="ml-auto bg-blue-600 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
-          {item.badge}
-        </span>
-      )}
     </Link>
   );
 }
@@ -186,32 +179,32 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="flex flex-col h-full w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
+    <aside className="flex flex-col h-full w-[260px] bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border">
-        <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-blue-600 shadow-md">
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/5">
+        <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20">
           <HardHat className="h-5 w-5 text-white" />
         </div>
         <div>
-          <p className="font-bold text-white text-sm leading-tight">ContractorHRMS</p>
-          <p className="text-xs text-slate-400">Plant Workforce</p>
+          <p className="font-bold text-[15px] text-white leading-tight tracking-tight">ContractorHRMS</p>
+          <p className="text-[11px] text-slate-500 font-medium">Plant Workforce</p>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-hide">
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5 scrollbar-hide">
         {navItems.map((item) => (
           <NavItemComponent key={item.label} item={item} />
         ))}
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-4 border-t border-sidebar-border">
+      <div className="px-3 py-4 border-t border-white/5">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:bg-sidebar-accent hover:text-white transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-[18px] w-[18px]" />
           <span>Logout</span>
         </button>
       </div>

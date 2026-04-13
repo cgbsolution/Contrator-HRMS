@@ -51,6 +51,7 @@ import { formatDate, workerStatusConfig, getInitials } from "@/lib/utils";
 import { workersApi } from "@/lib/api";
 import type { Worker } from "@/types";
 import { toast } from "sonner";
+import { TablePageSkeleton } from "@/components/ui/page-skeleton";
 
 const departments = ["All", "Production", "Maintenance", "Quality", "Warehouse", "Security", "Housekeeping", "Canteen"];
 const statuses = ["all", "active", "onboarding", "offboarding", "inactive", "terminated"];
@@ -415,14 +416,7 @@ export default function ContractorsPage() {
       )}
 
       {/* Loading State */}
-      {loading && !error && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto" />
-            <p className="text-sm text-muted-foreground mt-3">Loading workers...</p>
-          </CardContent>
-        </Card>
-      )}
+      {loading && !error && <TablePageSkeleton />}
 
       {/* Workers Table */}
       {!loading && !error && (

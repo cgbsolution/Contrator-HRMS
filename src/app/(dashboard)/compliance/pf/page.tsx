@@ -9,6 +9,7 @@ import { Download, Search, Users, IndianRupee, Loader2, AlertTriangle, RefreshCw
 import { formatCurrency, formatNumber, currentMonthYear } from "@/lib/utils";
 import { complianceApi } from "@/lib/api";
 import { toast } from "sonner";
+import { StatsPageSkeleton } from "@/components/ui/page-skeleton";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -90,16 +91,7 @@ export default function PFManagementPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="text-sm text-muted-foreground">Loading PF report...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <StatsPageSkeleton />;
 
   if (error) {
     return (

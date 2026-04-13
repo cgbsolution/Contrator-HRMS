@@ -20,6 +20,7 @@ import {
 import { essApi } from "@/lib/api";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ESSPageSkeleton } from "@/components/ui/page-skeleton";
 
 interface PunchLog {
   id: string;
@@ -151,16 +152,7 @@ export default function PunchPage() {
     year: "numeric",
   });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-green-600" />
-          <p className="text-sm text-muted-foreground">Loading punch data...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <ESSPageSkeleton />;
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">

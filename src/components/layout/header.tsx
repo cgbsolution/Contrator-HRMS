@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Bell, Search, Menu, HardHat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { cn, getInitials } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
@@ -59,11 +58,11 @@ export function Header({ onMenuClick }: HeaderProps) {
   const title = pageTitles[pathname] ?? "ContractorHRMS";
 
   return (
-    <header className="h-16 flex items-center gap-4 px-6 bg-white border-b border-border sticky top-0 z-30">
-      {/* Mobile menu button */}
+    <header className="h-14 flex items-center gap-3 px-4 lg:px-6 bg-white/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-30">
+      {/* Mobile menu */}
       <button
         onClick={onMenuClick}
-        className="lg:hidden p-2 rounded-md hover:bg-accent text-muted-foreground"
+        className="lg:hidden p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors"
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -76,13 +75,13 @@ export function Header({ onMenuClick }: HeaderProps) {
       </div>
 
       {/* Page title */}
-      <h1 className="hidden lg:block text-xl font-semibold text-foreground">{title}</h1>
+      <h1 className="hidden lg:block text-lg font-semibold text-foreground tracking-tight">{title}</h1>
 
       {/* Tenant badge */}
       {user?.tenant_name && (
-        <div className="hidden md:flex items-center gap-1.5 ml-3 px-2.5 py-1 rounded-full bg-purple-50 border border-purple-200">
-          <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />
-          <span className="text-xs font-medium text-purple-700">{user.tenant_name}</span>
+        <div className="hidden md:flex items-center gap-1.5 ml-2 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+          <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+          <span className="text-[11px] font-semibold text-blue-700">{user.tenant_name}</span>
         </div>
       )}
 
@@ -91,41 +90,35 @@ export function Header({ onMenuClick }: HeaderProps) {
 
       {/* Search */}
       <div className="hidden md:flex relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
           placeholder="Search workers, IDs..."
-          className="pl-9 w-64 h-9 bg-secondary border-0 focus-visible:ring-1"
+          className="pl-9 w-56 h-8 text-xs bg-muted/50 border-0 focus-visible:ring-1 rounded-lg"
         />
       </div>
 
       {/* Notifications */}
-      <div className="relative">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {notifications > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
-              {notifications}
-            </span>
-          )}
-        </Button>
-      </div>
+      <Button variant="ghost" size="icon" className="relative h-8 w-8 rounded-lg">
+        <Bell className="h-4 w-4 text-muted-foreground" />
+        {notifications > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center ring-2 ring-white">
+            {notifications}
+          </span>
+        )}
+      </Button>
 
       {/* User avatar */}
       {user && (
         <Link
           href={pathname.startsWith("/ess") ? "/ess/profile" : "/settings/profile"}
-          className="flex items-center gap-2.5 ml-2 hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2.5 ml-1 hover:opacity-80 transition-opacity"
         >
-          <div
-            className={cn(
-              "h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm cursor-pointer select-none"
-            )}
-          >
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
             {getInitials(user.name)}
           </div>
           <div className="hidden md:block">
-            <p className="text-sm font-medium leading-tight text-foreground">{user.name}</p>
-            <p className="text-xs text-muted-foreground capitalize">{user.role?.replace("_", " ")}</p>
+            <p className="text-sm font-semibold leading-tight text-foreground">{user.name}</p>
+            <p className="text-[10px] text-muted-foreground capitalize font-medium">{user.role?.replace("_", " ")}</p>
           </div>
         </Link>
       )}

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Calendar } from "lucide-react";
 import { essApi } from "@/lib/api";
+import { ESSPageSkeleton } from "@/components/ui/page-skeleton";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   P: { label: "Present", color: "bg-green-100 text-green-700" },

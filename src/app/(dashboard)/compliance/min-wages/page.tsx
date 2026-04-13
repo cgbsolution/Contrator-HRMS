@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, AlertTriangle, RefreshCw, ShieldCheck, ShieldAlert } from "lucide-react";
 import { formatCurrency, formatDate, formatNumber, currentMonthYear } from "@/lib/utils";
 import { complianceApi } from "@/lib/api";
+import { StatsPageSkeleton } from "@/components/ui/page-skeleton";
 
 const STATES = [
   "Maharashtra", "Karnataka", "Tamil Nadu", "Gujarat", "West Bengal",

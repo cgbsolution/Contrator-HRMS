@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { formatNumber } from "@/lib/utils";
 import { attendanceApi } from "@/lib/api";
 import { toast } from "sonner";
+import { TablePageSkeleton } from "@/components/ui/page-skeleton";
 
 interface MonthlyRecord {
   worker_id: string;

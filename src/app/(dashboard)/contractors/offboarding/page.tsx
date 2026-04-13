@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { workersApi } from "@/lib/api";
 import { toast } from "sonner";
+import { CardGridSkeleton } from "@/components/ui/page-skeleton";
 
 interface Worker {
   id: string;
@@ -130,16 +131,7 @@ export default function OffboardingPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-          <p className="text-sm text-muted-foreground">Loading offboarding workers...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <CardGridSkeleton />;
 
   if (error) {
     return (

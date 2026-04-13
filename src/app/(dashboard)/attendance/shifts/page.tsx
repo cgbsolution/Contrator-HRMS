@@ -43,6 +43,7 @@ import {
 import { shiftsApi } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
+import { StatsPageSkeleton } from "@/components/ui/page-skeleton";
 
 interface Shift {
   id: string;

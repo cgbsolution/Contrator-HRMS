@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Download, Eye, Receipt } from "lucide-react";
 import { essApi } from "@/lib/api";
+import { ESSPageSkeleton } from "@/components/ui/page-skeleton";
 
 export default function EssPayslipsPage() {
   const [payslips, setPayslips] = useState<Record<string, unknown>[]>([]);
@@ -39,13 +40,7 @@ export default function EssPayslipsPage() {
 
   const months = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
-      </div>
-    );
-  }
+  if (loading) return <ESSPageSkeleton />;
 
   return (
     <div className="space-y-6">

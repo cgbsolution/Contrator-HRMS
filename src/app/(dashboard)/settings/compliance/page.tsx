@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, AlertTriangle, RefreshCw, Save, ShieldCheck } from "lucide-react";
 import { settingsApi } from "@/lib/api";
 import { toast } from "sonner";
+import { CardGridSkeleton } from "@/components/ui/page-skeleton";
 
 interface SettingField {
   key: string;
@@ -102,16 +103,7 @@ export default function ComplianceConfigPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="text-sm text-muted-foreground">Loading compliance settings...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <CardGridSkeleton />;
 
   if (error && Object.keys(values).length === 0) {
     return (

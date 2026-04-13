@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { workersApi } from "@/lib/api";
+import { DetailPageSkeleton } from "@/components/ui/page-skeleton";
 
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-green-100 text-green-700",
@@ -146,13 +147,7 @@ export default function WorkerDetailPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
+  if (loading) return <DetailPageSkeleton />;
 
   if (!worker) return null;
 

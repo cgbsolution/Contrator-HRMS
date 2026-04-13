@@ -45,6 +45,7 @@ import {
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import { payrollApi, reportsApi } from "@/lib/api";
 import { toast } from "sonner";
+import { StatsPageSkeleton } from "@/components/ui/page-skeleton";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -57,13 +58,31 @@ interface PayrollRecord {
   employee_code: string;
   worker_name: string;
   department: string;
+  // Attendance
+  total_days_in_month: number;
+  weekly_offs: number;
+  holidays: number;
+  working_days: number;
+  present_days: number;
+  paid_leave_days: number;
   paid_days: number;
+  absent_days: number;
+  overtime_hours: number;
+  // Earnings
+  monthly_ctc: number;
   basic: number;
   da: number;
   hra: number;
+  bonus: number;
+  per_day_salary: number;
+  loss_of_pay: number;
+  overtime_amount: number;
   gross_salary: number;
+  // Deductions
   pf_employee: number;
+  pf_employer: number;
   esi_employee: number;
+  esi_employer: number;
   pt_amount: number;
   total_deductions: number;
   net_salary: number;
@@ -415,29 +434,31 @@ export default function PayrollPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-secondary/50 border-b">
-                      <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground">
-                        Name
+                      <th className="text-left px-3 py-2.5 font-semibold text-muted-foreground">
+                        Worker
                       </th>
-                      <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground hidden sm:table-cell">
-                        Code
+                      <th className="text-right px-3 py-2.5 font-semibold text-muted-foreground hidden sm:table-cell">
+                        CTC
                       </th>
-                      <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground hidden sm:table-cell">
-                        Days
+                      <th className="text-center px-3 py-2.5 font-semibold text-muted-foreground hidden md:table-cell">
+                        Work / Present / Absent
                       </th>
-                      <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground hidden md:table-cell">
+                      <th className="text-right px-3 py-2.5 font-semibold text-muted-foreground hidden lg:table-cell">
+                        LOP
+                      </th>
+                      <th className="text-right px-3 py-2.5 font-semibold text-muted-foreground hidden md:table-cell">
                         Gross
                       </th>
-                      <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground hidden lg:table-cell">
+                      <th className="text-right px-3 py-2.5 font-semibold text-muted-foreground hidden lg:table-cell">
                         Deductions
                       </th>
-                      <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground">
-                        Net
+                      <th className="text-right px-3 py-2.5 font-semibold text-muted-foreground">
+                        Net Payout
                       </th>
-                      <th className="text-center px-4 py-2.5 font-semibold text-muted-foreground">
+                      <th className="text-center px-3 py-2.5 font-semibold text-muted-foreground">
                         Status
                       </th>
-                      <th className="text-right px-4 py-2.5 font-semibold text-muted-foreground">
-                        Actions
+                      <th className="text-right px-3 py-2.5 font-semibold text-muted-foreground">
                       </th>
                     </tr>
                   </thead>
@@ -447,30 +468,47 @@ export default function PayrollPage() {
                         key={rec.id}
                         className="hover:bg-secondary/20 transition-colors"
                       >
-                        <td className="px-4 py-2.5">
-                          <p className="font-medium">{rec.worker_name}</p>
+                        <td className="px-3 py-2.5">
+                          <p className="font-medium text-sm">{rec.worker_name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {rec.department}
+                            {rec.employee_code} · {rec.department}
                           </p>
                         </td>
-                        <td className="px-4 py-2.5 hidden sm:table-cell">
-                          <span className="text-xs font-mono text-muted-foreground">
-                            {rec.employee_code}
-                          </span>
+                        <td className="px-3 py-2.5 text-right hidden sm:table-cell text-sm">
+                          {formatCurrency(rec.monthly_ctc || 0)}
                         </td>
-                        <td className="px-4 py-2.5 text-right hidden sm:table-cell">
-                          {rec.paid_days}
+                        <td className="px-3 py-2.5 text-center hidden md:table-cell">
+                          <div className="flex items-center justify-center gap-1.5 text-xs">
+                            <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-medium" title="Working days">
+                              {rec.working_days || rec.paid_days || 0}
+                            </span>
+                            <span className="text-muted-foreground">/</span>
+                            <span className="bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-medium" title="Present days">
+                              {rec.present_days || rec.paid_days || 0}
+                            </span>
+                            <span className="text-muted-foreground">/</span>
+                            <span className={`px-1.5 py-0.5 rounded font-medium ${(rec.absent_days || 0) > 0 ? "bg-red-50 text-red-700" : "bg-gray-50 text-gray-500"}`} title="Absent days">
+                              {rec.absent_days || 0}
+                            </span>
+                          </div>
                         </td>
-                        <td className="px-4 py-2.5 text-right hidden md:table-cell">
+                        <td className="px-3 py-2.5 text-right hidden lg:table-cell">
+                          {(rec.loss_of_pay || 0) > 0 ? (
+                            <span className="text-red-600 text-xs font-medium">-{formatCurrency(rec.loss_of_pay)}</span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">-</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2.5 text-right hidden md:table-cell text-sm">
                           {formatCurrency(rec.gross_salary)}
                         </td>
-                        <td className="px-4 py-2.5 text-right hidden lg:table-cell text-red-600">
+                        <td className="px-3 py-2.5 text-right hidden lg:table-cell text-red-600 text-sm">
                           {formatCurrency(rec.total_deductions)}
                         </td>
-                        <td className="px-4 py-2.5 text-right font-semibold text-green-700">
+                        <td className="px-3 py-2.5 text-right font-semibold text-green-700">
                           {formatCurrency(rec.net_salary)}
                         </td>
-                        <td className="px-4 py-2.5 text-center">
+                        <td className="px-3 py-2.5 text-center">
                           <span
                             className={`text-xs font-semibold px-2 py-1 rounded ${
                               statusBadgeClass[rec.status] ||
@@ -480,7 +518,7 @@ export default function PayrollPage() {
                             {rec.status}
                           </span>
                         </td>
-                        <td className="px-4 py-2.5 text-right">
+                        <td className="px-3 py-2.5 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
@@ -511,7 +549,7 @@ export default function PayrollPage() {
                     {filtered.length === 0 && (
                       <tr>
                         <td
-                          colSpan={8}
+                          colSpan={9}
                           className="px-4 py-8 text-center text-muted-foreground"
                         >
                           No payroll records found.

@@ -14,6 +14,7 @@ import { Loader2, AlertTriangle, RefreshCw, UserPlus, Users } from "lucide-react
 import { formatDate } from "@/lib/utils";
 import { authApi } from "@/lib/api";
 import { toast } from "sonner";
+import { TablePageSkeleton } from "@/components/ui/page-skeleton";
 
 const ROLES = [
   { value: "admin", label: "Admin" },
@@ -108,16 +109,7 @@ export default function UsersPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="text-sm text-muted-foreground">Loading users...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <TablePageSkeleton />;
 
   if (error) {
     return (

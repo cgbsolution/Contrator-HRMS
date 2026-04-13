@@ -16,6 +16,7 @@ import {
 import { formatNumber } from "@/lib/utils";
 import { agenciesApi } from "@/lib/api";
 import { toast } from "sonner";
+import { CardGridSkeleton } from "@/components/ui/page-skeleton";
 
 interface Agency {
   id: string;
@@ -183,16 +184,7 @@ export default function AgenciesPage() {
     toast.success("Agency ID copied to clipboard");
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="text-sm text-muted-foreground">Loading agencies...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <CardGridSkeleton />;
 
   if (error) {
     return (

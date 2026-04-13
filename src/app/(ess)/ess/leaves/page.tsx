@@ -17,6 +17,7 @@ import {
 import { Loader2, Plus, X, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { essApi } from "@/lib/api";
+import { ESSPageSkeleton } from "@/components/ui/page-skeleton";
 
 export default function EssLeavesPage() {
   const [leaveTypes, setLeaveTypes] = useState<Record<string, unknown>[]>([]);
@@ -93,13 +94,7 @@ export default function EssLeavesPage() {
     cancelled: "bg-gray-100 text-gray-700",
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
-      </div>
-    );
-  }
+  if (loading) return <ESSPageSkeleton />;
 
   const days = fromDate && toDate
     ? Math.max(0, Math.ceil((new Date(toDate).getTime() - new Date(fromDate).getTime()) / 86400000) + 1)
